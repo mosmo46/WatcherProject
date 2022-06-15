@@ -1,6 +1,7 @@
 ﻿using Octokit;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -16,15 +17,11 @@ namespace WatcherProject1
         static void Main(string[] args)
 
         {
-
-        string path = @"C:\Users\User\Desktop\Project\DemoApp\DemoApp";
-
-            MonitorDirectory(path);
+            string pathDemoApp = ConfigurationManager.AppSettings["pathDemoApp"];
+            MonitorDirectory(pathDemoApp);
             Console.ReadKey();
 
         }
-
-      
 
         private static void MonitorDirectory(string path)
 
@@ -61,7 +58,7 @@ namespace WatcherProject1
         {
             var ghClient = new GitHubClient(new ProductHeaderValue("DemoApp"));
 
-            ghClient.Credentials = new Credentials("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");
+            ghClient.Credentials = new Credentials("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");
 
             var owner = "mosmo46";
             var repo = "DemoApp";
@@ -71,7 +68,7 @@ namespace WatcherProject1
                 var fileDetails = await ghClient.Repository.Content.GetAllContentsByRef(owner, repo,
                                         path, master);
                 var updateResult = await ghClient.Repository.Content.UpdateFile(owner, repo, path,
-                                         new UpdateFileRequest("My updated file", "Succeeded", fileDetails.First().Sha));
+                                         new UpdateFileRequest("My updated file", "SucceededSucceededSucceeded", fileDetails.First().Sha));
             }
             catch (Octokit.NotFoundException)
             {
@@ -81,12 +78,14 @@ namespace WatcherProject1
         }
         private static void ReadXmlFile(string path)
         {
-            string filename = @"C:\Users\User\Desktop\Project\WatcherProject\WatcherProject\WatcherProject1\bin\Debug\TestResult.xml";
+            string xmlFilePath = ConfigurationManager.AppSettings["xmlFilePath"];
+
+           // string xmlFilePath = @"C:\Users\User\Desktop\Project\WatcherProject\WatcherProject\WatcherProject1\bin\Debug\TestResult.xml";
             Serializer ser = new Serializer();
             string xmlInputData = string.Empty;
             string xmlOutputData = string.Empty;
 
-            xmlInputData = File.ReadAllText(filename);
+            xmlInputData = File.ReadAllText(xmlFilePath);
 
             XmlModel.testrun resFromXml = ser.Deserialize<XmlModel.testrun>(xmlInputData);
             xmlOutputData = ser.Serialize<XmlModel.testrun>(resFromXml);
@@ -103,13 +102,16 @@ namespace WatcherProject1
         }
         private static  void FileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
         {
-            string solutionFile = @"C:\Users\User\Desktop\Project\WatcherProject\WatcherProject\WatcherProject.sln";
-            string MSBuild = @"C:\Program Files\Microsoft Visual Studio\2022\Community\Msbuild\Current\Bin\MSBuild.exe";
+
+            string solutionFile = ConfigurationManager.AppSettings["solutionFile"];
+            string MSBuild = ConfigurationManager.AppSettings["MSBuild"];
+
+
             var pro = Process.Start(MSBuild, solutionFile);
             pro.WaitForExit();
-            string nunitConsole = @"C:\Users\User\.nuget\packages\nunit.consolerunner\3.15.0\tools\nunit3-console.exe";
-            
-            string nunitDLL = @"C:\Users\User\Desktop\Project\DemoApp\DemoApp\UnitTestProject1\bin\Debug\UnitTestProject1.dll";
+
+            string nunitConsole = ConfigurationManager.AppSettings["nunitConsole"];
+            string nunitDLL = ConfigurationManager.AppSettings["nunitDLL"];
 
             var processRnnar = Process.Start(nunitConsole, nunitDLL);
 
