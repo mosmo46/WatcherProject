@@ -17,13 +17,14 @@ namespace WatcherProject1
 
         {
 
-            string path = @"C:\Users\User\Desktop\Project\DemoApp\DemoApp";
+        string path = @"C:\Users\User\Desktop\Project\DemoApp\DemoApp";
 
             MonitorDirectory(path);
-
             Console.ReadKey();
 
         }
+
+      
 
         private static void MonitorDirectory(string path)
 
@@ -56,10 +57,53 @@ namespace WatcherProject1
             Console.ReadLine();
             
         }
-        private static async void FileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
+        private static async void uplodaToGithub(string path)
+        {
+            var ghClient = new GitHubClient(new ProductHeaderValue("DemoApp"));
+
+            ghClient.Credentials = new Credentials("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");
+
+            var owner = "mosmo46";
+            var repo = "DemoApp";
+            var master = "master";
+            try
+            {
+                var fileDetails = await ghClient.Repository.Content.GetAllContentsByRef(owner, repo,
+                                        path, master);
+                var updateResult = await ghClient.Repository.Content.UpdateFile(owner, repo, path,
+                                         new UpdateFileRequest("My updated file", "Succeeded", fileDetails.First().Sha));
+            }
+            catch (Octokit.NotFoundException)
+            {
+
+                await ghClient.Repository.Content.CreateFile(owner, repo, path, new CreateFileRequest("API File cs creation", "Hello Universe! " + DateTime.UtcNow, master));
+            }
+        }
+        private static void ReadXmlFile(string path)
+        {
+            string filename = @"C:\Users\User\Desktop\Project\WatcherProject\WatcherProject\WatcherProject1\bin\Debug\TestResult.xml";
+            Serializer ser = new Serializer();
+            string xmlInputData = string.Empty;
+            string xmlOutputData = string.Empty;
+
+            xmlInputData = File.ReadAllText(filename);
+
+            XmlModel.testrun resFromXml = ser.Deserialize<XmlModel.testrun>(xmlInputData);
+            xmlOutputData = ser.Serialize<XmlModel.testrun>(resFromXml);
+
+            Console.WriteLine(xmlOutputData);
+            if (resFromXml.failed == 0)
+            {
+                uplodaToGithub(path);
+            }
+            else
+            {
+                Console.WriteLine("One or more of the tests do not pass");
+            }
+        }
+        private static  void FileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
         {
             string solutionFile = @"C:\Users\User\Desktop\Project\WatcherProject\WatcherProject\WatcherProject.sln";
-
             string MSBuild = @"C:\Program Files\Microsoft Visual Studio\2022\Community\Msbuild\Current\Bin\MSBuild.exe";
             var pro = Process.Start(MSBuild, solutionFile);
             pro.WaitForExit();
@@ -69,31 +113,9 @@ namespace WatcherProject1
 
             var processRnnar = Process.Start(nunitConsole, nunitDLL);
 
-            processRnnar.WaitForExit(); 
+            processRnnar.WaitForExit();
 
-            var fullPath = e.Name;
-
-            var ghClient = new GitHubClient(new ProductHeaderValue("DemoApp"));
-
-
-            ghClient.Credentials = new Credentials("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");
-
-
-            var owner = "mosmo46";
-            var repo = "DemoApp";
-            var master = "master";
-            try
-            {
-                var fileDetails = await ghClient.Repository.Content.GetAllContentsByRef(owner, repo,
-                                        fullPath, master);
-                var updateResult = await ghClient.Repository.Content.UpdateFile(owner, repo, fullPath,
-                                         new UpdateFileRequest("My updated file", "Succeeded", fileDetails.First().Sha));
-            }
-            catch (Octokit.NotFoundException)
-            {
-
-                await ghClient.Repository.Content.CreateFile(owner, repo, fullPath, new CreateFileRequest("API File cs creation", "Hello Universe! " + DateTime.UtcNow, master));
-            }
+            ReadXmlFile(e.Name);
 
             Console.ReadLine();
             Console.WriteLine("File created: {0}", e.Name);
@@ -117,9 +139,7 @@ namespace WatcherProject1
         private static void FileSystemWatcher_Deleted(object sender, FileSystemEventArgs e)
 
         {
-
             Console.WriteLine("File deleted: {0}", e.Name);
-
         }
 
     }
