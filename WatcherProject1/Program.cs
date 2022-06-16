@@ -7,18 +7,24 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace WatcherProject1
 {
     class Program
-
     {
-
         static void Main(string[] args)
 
         {
-            string pathDemoApp = ConfigurationManager.AppSettings["pathDemoApp"];
-            MonitorDirectory(pathDemoApp);
+            var pathDemoApp = ConfigurationManager.AppSettings["pathDemoApp"].Split(',');
+            for (int i = 0; i < pathDemoApp.Length; i++)
+            {
+                if (Directory.Exists(pathDemoApp[i]))
+                {
+                    MonitorDirectory(pathDemoApp[i]);
+                }
+            }
+
             Console.ReadKey();
 
         }
@@ -52,7 +58,7 @@ namespace WatcherProject1
 
             Console.WriteLine("Press enter to exit.");
             Console.ReadLine();
-            
+
         }
         private static async void uplodaToGithub(string path)
         {
@@ -78,40 +84,80 @@ namespace WatcherProject1
         }
         private static void ReadXmlFile(string path)
         {
-            string xmlFilePath = ConfigurationManager.AppSettings["xmlFilePath"];
-
-           // string xmlFilePath = @"C:\Users\User\Desktop\Project\WatcherProject\WatcherProject\WatcherProject1\bin\Debug\TestResult.xml";
             Serializer ser = new Serializer();
             string xmlInputData = string.Empty;
             string xmlOutputData = string.Empty;
-
-            xmlInputData = File.ReadAllText(xmlFilePath);
-
-            XmlModel.testrun resFromXml = ser.Deserialize<XmlModel.testrun>(xmlInputData);
-            xmlOutputData = ser.Serialize<XmlModel.testrun>(resFromXml);
-
-            Console.WriteLine(xmlOutputData);
-            if (resFromXml.failed == 0)
+            var xmlFilePaths = ConfigurationManager.AppSettings["xmlFilePath"].Split(',');
+            foreach (var xmlFilePath in xmlFilePaths)
             {
-                uplodaToGithub(path);
-            }
-            else
-            {
-                Console.WriteLine("One or more of the tests do not pass");
+
+                if (File.Exists(xmlFilePath))
+                {
+                    xmlInputData = File.ReadAllText(xmlFilePath);
+
+                    XmlModel.testrun resFromXml = ser.Deserialize<XmlModel.testrun>(xmlInputData);
+                    xmlOutputData = ser.Serialize<XmlModel.testrun>(resFromXml);
+
+                    Console.WriteLine(xmlOutputData);
+                    if (resFromXml.failed == 0)
+                    {
+                        uplodaToGithub(path);
+                    }
+                    else
+                    {
+                        Console.WriteLine("One or more of the tests do not pass");
+                    }
+                }
             }
         }
-        private static  void FileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
+        private static void FileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
         {
 
-            string solutionFile = ConfigurationManager.AppSettings["solutionFile"];
-            string MSBuild = ConfigurationManager.AppSettings["MSBuild"];
+            string[] solutionFiles = ConfigurationManager.AppSettings["solutionFile"].Split(',');
+            string [] MSBuilds = ConfigurationManager.AppSettings["MSBuild"].Split(',');
+            var solutionFile = string.Empty;
+            var MSBuild = string.Empty;
 
+
+            foreach (var tmpSolutionFile in solutionFiles)
+            {
+                if (File.Exists(tmpSolutionFile))
+                {
+                    solutionFile = tmpSolutionFile;
+                }
+            }
+
+            foreach (var tmpMSBuild in MSBuilds)
+            {
+                if (File.Exists(tmpMSBuild))
+                {
+                    MSBuild = tmpMSBuild;
+                }
+            }
 
             var pro = Process.Start(MSBuild, solutionFile);
             pro.WaitForExit();
 
-            string nunitConsole = ConfigurationManager.AppSettings["nunitConsole"];
-            string nunitDLL = ConfigurationManager.AppSettings["nunitDLL"];
+            string [] nunitConsoles = ConfigurationManager.AppSettings["nunitConsole"].Split(',');
+            string [] nunitDLLs = ConfigurationManager.AppSettings["nunitDLL"].Split(',');
+            string nunitConsole = string.Empty;
+            string nunitDLL = string.Empty;
+
+            foreach (var tmpNunitConsole in nunitConsoles)
+            {
+                if (File.Exists(tmpNunitConsole))
+                {
+                    nunitConsole = tmpNunitConsole;
+                }
+            }
+
+            foreach (var tmpnunitDLLs in nunitDLLs)
+            {
+                if (File.Exists(tmpnunitDLLs))
+                {
+                    nunitDLL = tmpnunitDLLs;
+                }
+            }
 
             var processRnnar = Process.Start(nunitConsole, nunitDLL);
 
