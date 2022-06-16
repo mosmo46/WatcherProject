@@ -7,7 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.IO;
+
 
 namespace WatcherProject1
 {
@@ -22,6 +22,7 @@ namespace WatcherProject1
                 if (Directory.Exists(pathDemoApp[i]))
                 {
                     MonitorDirectory(pathDemoApp[i]);
+                    break;
                 }
             }
 
@@ -82,6 +83,7 @@ namespace WatcherProject1
                 await ghClient.Repository.Content.CreateFile(owner, repo, path, new CreateFileRequest("API File cs creation", "Hello Universe! " + DateTime.UtcNow, master));
             }
         }
+
         private static void ReadXmlFile(string path)
         {
             Serializer ser = new Serializer();
@@ -102,19 +104,22 @@ namespace WatcherProject1
                     if (resFromXml.failed == 0)
                     {
                         uplodaToGithub(path);
+                        break;
                     }
                     else
                     {
                         Console.WriteLine("One or more of the tests do not pass");
                     }
                 }
+
             }
         }
+
         private static void FileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
         {
 
             string[] solutionFiles = ConfigurationManager.AppSettings["solutionFile"].Split(',');
-            string [] MSBuilds = ConfigurationManager.AppSettings["MSBuild"].Split(',');
+            string[] MSBuilds = ConfigurationManager.AppSettings["MSBuild"].Split(',');
             var solutionFile = string.Empty;
             var MSBuild = string.Empty;
 
@@ -124,6 +129,7 @@ namespace WatcherProject1
                 if (File.Exists(tmpSolutionFile))
                 {
                     solutionFile = tmpSolutionFile;
+                    break;
                 }
             }
 
@@ -132,14 +138,15 @@ namespace WatcherProject1
                 if (File.Exists(tmpMSBuild))
                 {
                     MSBuild = tmpMSBuild;
+                    break;
                 }
             }
 
             var pro = Process.Start(MSBuild, solutionFile);
             pro.WaitForExit();
 
-            string [] nunitConsoles = ConfigurationManager.AppSettings["nunitConsole"].Split(',');
-            string [] nunitDLLs = ConfigurationManager.AppSettings["nunitDLL"].Split(',');
+            string[] nunitConsoles = ConfigurationManager.AppSettings["nunitConsole"].Split(',');
+            string[] nunitDLLs = ConfigurationManager.AppSettings["nunitDLL"].Split(',');
             string nunitConsole = string.Empty;
             string nunitDLL = string.Empty;
 
@@ -148,6 +155,7 @@ namespace WatcherProject1
                 if (File.Exists(tmpNunitConsole))
                 {
                     nunitConsole = tmpNunitConsole;
+                    break;
                 }
             }
 
@@ -156,6 +164,7 @@ namespace WatcherProject1
                 if (File.Exists(tmpnunitDLLs))
                 {
                     nunitDLL = tmpnunitDLLs;
+                    break;
                 }
             }
 
