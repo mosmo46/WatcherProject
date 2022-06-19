@@ -13,6 +13,10 @@ namespace WatcherProject1
 {
     class Program
     {
+        static string owner = "mosmo46";
+        static string name = "gitignore";
+
+
         static void Main(string[] args)
 
         {
@@ -73,8 +77,6 @@ namespace WatcherProject1
 
             Console.WriteLine($"client1=>>{client1}");
 
-
-
         }
         private static async void uplodaToGithub(string path)
         {
@@ -82,7 +84,7 @@ namespace WatcherProject1
 
             ghClient.Credentials = new Credentials("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");
 
-           // var owner = "mosmo46";
+            // var owner = "mosmo46";
             var repo = "DemoApp";
             var master = "master";
             try
@@ -98,6 +100,7 @@ namespace WatcherProject1
                 await ghClient.Repository.Content.CreateFile(owner, repo, path, new CreateFileRequest("API File cs creation", "Hello Universe! " + DateTime.UtcNow, master));
             }
         }
+
         private static void ReadXmlFile(string path)
         {
             Serializer ser = new Serializer();
@@ -114,17 +117,25 @@ namespace WatcherProject1
                     XmlModel.testrun resFromXml = ser.Deserialize<XmlModel.testrun>(xmlInputData);
                     xmlOutputData = ser.Serialize<XmlModel.testrun>(resFromXml);
 
-            Console.WriteLine(xmlOutputData);
-            if (resFromXml.failed == 0)
-            {
-                uplodaToGithub(path);
+                    Console.WriteLine(xmlOutputData);
+                    if (resFromXml.failed == 0)
+                    {
+                        uplodaToGithub(path);
+                        break;
+                    }
+                    else
+                    {
+                        Console.WriteLine("One or more of the tests do not pass");
+                    }
+                }
             }
-            else
-            {
-                Console.WriteLine("One or more of the tests do not pass");
-            }
+
+
         }
-        private static  void FileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
+
+
+
+        private static void FileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
         {
 
             string[] solutionFiles = ConfigurationManager.AppSettings["solutionFile"].Split(',');
@@ -210,6 +221,5 @@ namespace WatcherProject1
         {
             Console.WriteLine("File deleted: {0}", e.Name);
         }
-
     }
 }
