@@ -13,9 +13,6 @@ namespace WatcherProject1
 {
     class Program
     {
-        static string owner = "mosmo46";
-        static string name = "gitignore";
-
 
         static void Main(string[] args)
 
@@ -83,8 +80,8 @@ namespace WatcherProject1
             var ghClient = new GitHubClient(new ProductHeaderValue("DemoApp"));
 
             ghClient.Credentials = new Credentials("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");
+            string owner = "mosmo46";
 
-            // var owner = "mosmo46";
             var repo = "DemoApp";
             var master = "master";
             try
