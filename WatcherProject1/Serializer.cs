@@ -10,6 +10,7 @@ namespace WatcherProject1
 {
     public class Serializer
     {
+ 
         public XmlModel.testrun Deserialize<T>(string input) where T : class
         {
             XmlSerializer ser = new XmlSerializer(typeof(T));
