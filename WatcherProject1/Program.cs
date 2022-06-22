@@ -57,7 +57,7 @@ namespace WatcherProject1
             fileSystemWatcher.Filter = "*.cs";
             fileSystemWatcher.IncludeSubdirectories = true;
 
-
+            Console.WriteLine("ttttttt");
             Console.WriteLine("Press enter to exit.");
             Console.ReadLine();
 
