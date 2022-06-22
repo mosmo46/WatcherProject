@@ -8,20 +8,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-
 namespace WatcherProject1
 {
     class Program
     {
-        private static FileSystemWatcher watcher = new FileSystemWatcher();
 
         static void Main(string[] args)
 
         {
-
-
             var pathDemoApp = ConfigurationManager.AppSettings["pathDemoApp"].Split(',');
-
 
             for (int i = 0; i < pathDemoApp.Length; i++)
             {
@@ -34,10 +29,6 @@ namespace WatcherProject1
 
 
         }
-
-
-
-
 
         private static void MonitorDirectory(string path)
 
@@ -72,11 +63,17 @@ namespace WatcherProject1
 
         }
 
-        private static async void UplodaToGithub(string path)
+        private static string ReadCSFile(string readFilePath)
+        {
+            string content = System.IO.File.ReadAllText(readFilePath);
+            return content;
+        }
+
+        private static async void UplodaToGithub(string path , string readFilePath)
         {
             var ghClient = new GitHubClient(new ProductHeaderValue("DemoApp"));
 
-            ghClient.Credentials = new Credentials("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");
+            ghClient.Credentials = new Credentials("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");
             string owner = "mosmo46";
             var repo = "DemoApp";
             var master = "master";
@@ -84,8 +81,11 @@ namespace WatcherProject1
             {
                 var fileDetails = await ghClient.Repository.Content.GetAllContentsByRef(owner, repo,
                                         path, master);
+                var sha = fileDetails.First().Sha;
+
                 var updateResult = await ghClient.Repository.Content.UpdateFile(owner, repo, path,
-                                         new UpdateFileRequest("My updated file", "Succeed", fileDetails.First().Sha));
+                                         new UpdateFileRequest("My updated file", ReadCSFile(readFilePath), sha));
+
             }
             catch (Octokit.NotFoundException)
             {
@@ -93,7 +93,7 @@ namespace WatcherProject1
             }
         }
 
-        private static void ReadXmlFile(string path)
+        private static void ReadXmlFile(string path, string readFilePath)
         {
             Serializer ser = new Serializer();
             string xmlInputData = string.Empty;
@@ -110,10 +110,9 @@ namespace WatcherProject1
 
                     xmlOutputData = ser.Serialize<XmlModel.testrun>(resFromXml);
 
-                    Console.WriteLine(xmlOutputData);
                     if (resFromXml.failed == 0)
                     {
-                        UplodaToGithub(path);
+                        UplodaToGithub(path , readFilePath);
                         break;
                     }
                     else
@@ -189,7 +188,8 @@ namespace WatcherProject1
         {
             MsBuild();
             RunTests();
-            ReadXmlFile(e.Name);
+
+            ReadXmlFile(e.Name, e.FullPath);
             Console.WriteLine("File Changed: {0}", e.Name);
         }
 
