@@ -15,34 +15,14 @@ namespace WatcherProject1
 {
     class Program
     {
-        private static int counet;
+        private static int counter=0;
 
         static void Main(string[] args)
 
         {
-                string gitUser = "Moshe Yaso";
-                var gitToken = "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";
 
-            //using (var repo = new LibGit2Sharp.Repository(@"C:\Users\User\source\repos\DemoApp"))
-            //{
-            //    LibGit2Sharp.PushOptions options = new LibGit2Sharp.PushOptions();
-
-            //    options.CredentialsProvider = new CredentialsHandler(
-            //    options.CredentialsProvider = (_url, _user, _cred) => new UsernamePasswordCredentials { Username = gitUser, Password = gitToken });
-            //    repo.Network.Push(repo.Branches["remotes/origin/master"], options);
-            //}
-
-            using (var repo = new LibGit2Sharp.Repository(@"C:\Users\User\source\repos\DemoApp"))
-            {
-                Remote remote = repo.Network.Remotes["origin"];
-                var options = new PushOptions();
-                options.CredentialsProvider = (_url, _user, _cred) =>
-                    new UsernamePasswordCredentials { Username = gitUser, Password = gitToken };
-                repo.Network.Push(remote, @"refs/heads/master", options);
-            }
-            //createTag("newTagTest1");
-            //pushTags("newTagTest1");
-            //ChecksForChangesInReopAndpull();
+        
+            ChecksForChangesInReopAndpull();
 
             var pathDemoApp = ConfigurationManager.AppSettings["pathDemoApp"].Split(',');
 
@@ -69,9 +49,26 @@ namespace WatcherProject1
                 using (var repo = new LibGit2Sharp.Repository(@"C:\Users\User\source\repos\DemoApp"))
                 {
 
+                          string gitUser = "Moshe Yaso";
+                           string gitToken = "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";
+        var trackingBranch = repo.Branches["remotes/origin/my-remote-branch"];
 
-                    var     trackingBranch = repo.Branches["remotes/origin/my-remote-branch"];
+                    
+                    Tag t = repo.ApplyTag($"{counter + 1}");
+                    foreach (var tag in repo.Tags)
+                    {
+                        PushOptions options = new PushOptions();
+                        options.CredentialsProvider = new CredentialsHandler(
+                            (url, usernameFromUrl, types) =>
+                                new UsernamePasswordCredentials()
+                                {
+                                    Username = gitUser,
+                                    Password = gitToken
 
+                                });
+                        repo.Network.Push(repo.Network.Remotes["origin"], tag.CanonicalName, options);
+                        counter++;
+                    }
                     PullOptions pullOptions = new PullOptions()
                     {
                         MergeOptions = new MergeOptions()
@@ -104,54 +101,6 @@ namespace WatcherProject1
             }
         }
 
-        public static bool createTag(string tag)
-        {
-            var repo = new LibGit2Sharp.Repository(@"C:\Users\User\source\repos\DemoApp");
-            if (repo == null)
-            {
-                Console.WriteLine(DateTime.Now + "No repository exists in ");
-                return false;
-            }
-            Tag t = repo.ApplyTag(tag);
-            if (t == null)
-            {
-                Console.WriteLine(DateTime.Now + "Could not create tag :" + tag);
-                return false;
-            }
-            else
-                Console.WriteLine(DateTime.Now + "Tag has been created successfully :" + tag);
-            return true;
-        }
-
-        //push the tags
-        public static bool pushTags(string tag)
-        {
-            try
-            {
-                LibGit2Sharp.Credentials creds = new UsernamePasswordCredentials()
-                {
-                    Username = "Moshe Yaso",
-                    Password = "Mos633473790"
-                };
-                CredentialsHandler ccd = (url, usernameFromUrl, types) => creds;
-                PushOptions options = new PushOptions { CredentialsProvider = ccd };
-                string rfspec = "refs/tags/" + tag;
-                using (LibGit2Sharp.Repository repo = new LibGit2Sharp.Repository(@"C:\Users\User\source\repos\DemoApp"))
-                {
-                  
-                   
-                        repo.Network.Push(repo.Network.Remotes["origin"], tag, options);
-                    
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(DateTime.Now + "----#Errors in Push tag " + tag + " " + ex.Message);
-                return false;
-            }
-
-            return true;
-        }
 
 
         private static void MonitorDirectory(string path)
