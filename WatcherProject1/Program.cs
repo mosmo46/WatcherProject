@@ -20,10 +20,6 @@ namespace WatcherProject1
         static void Main(string[] args)
 
         {
-
-        
-            ChecksForChangesInReopAndpull();
-
             var pathDemoApp = ConfigurationManager.AppSettings["pathDemoApp"].Split(',');
 
             for (int i = 0; i < pathDemoApp.Length; i++)
@@ -34,73 +30,7 @@ namespace WatcherProject1
                     break;
                 }
             }
-
-
-
         }
-
-
-        private static void ChecksForChangesInReopAndpull()
-
-        {
-            while (true)
-            {
-
-                using (var repo = new LibGit2Sharp.Repository(@"C:\Users\User\source\repos\DemoApp"))
-                {
-
-                          string gitUser = "Moshe Yaso";
-                           string gitToken = "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";
-        var trackingBranch = repo.Branches["remotes/origin/my-remote-branch"];
-
-                    
-                    Tag t = repo.ApplyTag($"{counter + 1}");
-                    foreach (var tag in repo.Tags)
-                    {
-                        PushOptions options = new PushOptions();
-                        options.CredentialsProvider = new CredentialsHandler(
-                            (url, usernameFromUrl, types) =>
-                                new UsernamePasswordCredentials()
-                                {
-                                    Username = gitUser,
-                                    Password = gitToken
-
-                                });
-                        repo.Network.Push(repo.Network.Remotes["origin"], tag.CanonicalName, options);
-                        counter++;
-                    }
-                    PullOptions pullOptions = new PullOptions()
-                    {
-                        MergeOptions = new MergeOptions()
-                        {
-                            FastForwardStrategy = FastForwardStrategy.Default
-                        }
-                    };
-
-
-                    MergeResult mergeResult = Commands.Pull(
-                        repo,
-                        new LibGit2Sharp.Signature("my name", "my email", DateTimeOffset.Now),
-                        pullOptions
-                    );
-
-
-                    if (mergeResult.Commit != null)
-                    {
-                        Console.WriteLine("pull changes successfully");
-                        MsBuild();
-                        RunTests();
-                    }
-                    else
-                    {
-                        Console.WriteLine("no changes to pull");
-                    }
-                }
-                Thread.Sleep(10000);
-
-            }
-        }
-
 
 
         private static void MonitorDirectory(string path)
@@ -137,13 +67,113 @@ namespace WatcherProject1
         }
         private static void FileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
         {
-           MsBuild();
-           RunTests();
 
-          //  ReadXmlFile(e.Name, e.FullPath);
+            ChecksForChangesInReopAndpull();
+            MsBuild();
+            RunTests();
+
+            ReadXmlFile(e.Name, e.FullPath);
 
             Console.WriteLine("File Changed: {0}", e.Name);
         }
+        private static void ChecksForChangesInReopAndpull()
+
+        {            
+
+                using (var repo = new LibGit2Sharp.Repository(@"C:\Users\User\source\repos\DemoApp"))
+                {
+
+                          string gitUser = "Moshe Yaso";
+                          string gitToken = " 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";
+                          var trackingBranch = repo.Branches["remotes/origin/my-remote-branch"];
+
+                  
+                    PullOptions pullOptions = new PullOptions()
+                    {
+                        MergeOptions = new MergeOptions()
+                        {
+                            FastForwardStrategy = FastForwardStrategy.Default
+                        }
+                    };
+
+                    MergeResult mergeResult = Commands.Pull(
+                        repo,
+                        new LibGit2Sharp.Signature("my name", "my email", DateTimeOffset.Now),
+                        pullOptions
+                    );
+
+
+                    if (mergeResult.Commit == null)
+                    {
+                       Console.WriteLine("pull changes successfully");
+                        MsBuild();
+                        RunTests();
+
+
+
+
+                        createTag($"V--0-{counter + 1}");
+                        pushTags($"V-0--{counter + 1}");
+                    counter++;
+                    }
+                    else
+                    {
+                        Console.WriteLine("no changes to pull");
+                    }
+                }
+
+            
+        }
+
+        public static bool createTag(string tag)
+        {
+            var repo = new LibGit2Sharp.Repository(@"C:\Users\User\source\repos\DemoApp");
+            if (repo == null)
+            {
+                Console.WriteLine(DateTime.Now + "No repository exists in " + @"C:\Users\User\source\repos\DemoApp");
+                return false;
+            }
+            Tag t = repo.ApplyTag(tag);
+            if (t == null)
+            {
+                Console.WriteLine(DateTime.Now + "Could not create tag :" + tag);
+                return false;
+            }
+            else
+                Console.WriteLine(DateTime.Now + "Tag has been created successfully :" + tag);
+            return true;
+        }
+
+        public static bool pushTags(string tag)
+        {
+            string gitUser = "mosmo46";
+            string gitToken = "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";
+            try
+            {
+                LibGit2Sharp.Credentials creds = new UsernamePasswordCredentials()
+                {
+                    Username = gitUser,
+                    Password = gitToken
+                };
+                CredentialsHandler ccd = (url, usernameFromUrl, types) => creds;
+                PushOptions options = new PushOptions { CredentialsProvider = ccd };
+                string rfspec = "refs/tags/" + tag;
+                using (LibGit2Sharp.Repository repo = new LibGit2Sharp.Repository(@"C:\Users\User\source\repos\DemoApp"))
+                {
+                    Remote remote = repo.Network.Remotes["origin"];
+                    repo.Network.Push(remote, rfspec, rfspec, options);
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(DateTime.Now + "----#Errors in Push tag " + tag + " " + ex.Message);
+                return false;
+            }
+
+            return true;
+        }
+
 
         private static void MsBuild()
         {
@@ -174,7 +204,7 @@ namespace WatcherProject1
             var processBuild = Process.Start(MSBuild, solutionFile);
             processBuild.WaitForExit();
             }
-            private static void RunTests()
+        private static void RunTests()
         {
             string[] nunitConsoles = ConfigurationManager.AppSettings["nunitConsole"].Split(',');
             string[] nunitDLLs = ConfigurationManager.AppSettings["nunitDLL"].Split(',');
@@ -201,43 +231,66 @@ namespace WatcherProject1
             var processRnnar = Process.Start(nunitConsole, nunitDLL);
 
             processRnnar.WaitForExit();
+
+
         }
 
 
 
-        //private static void ReadXmlFile(string path, string readFilePath)
-        //{
-        //    Serializer ser = new Serializer();
-        //    string xmlInputData = string.Empty;
-        //    string xmlOutputData = string.Empty;
-        //    var xmlFilePaths = ConfigurationManager.AppSettings["xmlFilePath"].Split(',');
 
 
-        //    foreach (var xmlFilePath in xmlFilePaths)
-        //    {
-
-        //        if (File.Exists(xmlFilePath))
-        //        {
-        //            xmlInputData = File.ReadAllText(xmlFilePath);
-
-        //            XmlModel.testrun resFromXml = ser.Deserialize<XmlModel.testrun>(xmlInputData);
-
-        //       //     xmlOutputData = ser.Serialize<XmlModel.testrun>(resFromXml);
-
-        //            if (resFromXml.failed == 0)
-        //            {
-        //                UplodaToGithub(path, readFilePath);
-        //                break;
-        //            }
-        //            else
-        //            {
-        //                Console.WriteLine("One or more of the tests do not pass");
-        //            }
-        //        }
-        //    }
 
 
-        //}
+        private static void ReadXmlFile(string path, string readFilePath)
+        {
+            Serializer ser = new Serializer();
+            string xmlInputData = string.Empty;
+            string xmlOutputData = string.Empty;
+            var xmlFilePaths = ConfigurationManager.AppSettings["xmlFilePath"].Split(',');
+
+
+            foreach (var xmlFilePath in xmlFilePaths)
+            {
+
+                if (File.Exists(xmlFilePath))
+                {
+                    xmlInputData = File.ReadAllText(xmlFilePath);
+
+                    XmlModel.testrun resFromXml = ser.Deserialize<XmlModel.testrun>(xmlInputData);
+
+                    if (resFromXml.failed == 0)
+                    {
+                        string testResultTest = @"C:\Users\User\source\repos\DemoApp\Calc\testResult.txt";
+
+                        if (!File.Exists(testResultTest))
+                        {
+                            File.Create(testResultTest).Dispose();
+
+                            using (TextWriter tw = new StreamWriter(testResultTest))
+                            {
+                                tw.WriteLine($"Total tests {resFromXml.total}  {resFromXml.result}, Total failed {resFromXml.failed}");
+                            }
+
+                        }
+                        else if (File.Exists(testResultTest))
+                        {
+                            using (TextWriter tw = new StreamWriter(testResultTest))
+                            {
+                                tw.WriteLine($"Total tests {resFromXml.total}  {resFromXml.result}, Total failed {resFromXml.failed}");
+                            }
+                        }
+                        // UplodaToGithub(path, readFilePath);
+                        break;
+                    }
+                    else
+                    {
+                        Console.WriteLine("One or more of the tests do not pass");
+                    }
+                }
+            }
+
+
+        }
         //private static async void UplodaToGithub(string path, string readFilePath)
         //{
         //    var ghClient = new GitHubClient(new ProductHeaderValue("DemoApp"));
@@ -266,7 +319,6 @@ namespace WatcherProject1
         //        string content = System.IO.File.ReadAllText(readFilePath);
         //    return content;
         //}
-
 
 
 
