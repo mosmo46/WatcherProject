@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace WatcherProject1
 {
-    class Program
+   public class Program
     {
         private static int counter=0;
 
@@ -61,33 +61,29 @@ namespace WatcherProject1
             fileSystemWatcher.IncludeSubdirectories = true;
 
             Console.WriteLine("Press enter to exit.");
-            Console.WriteLine("Press enter to exit.");
+            ChecksForChangesInReopAndpull();
+
             Console.ReadLine();
 
         }
         private static void FileSystemWatcher_Changed(object sender, FileSystemEventArgs e)
         {
-
-            ChecksForChangesInReopAndpull();
             MsBuild();
             RunTests();
 
-            ReadXmlFile(e.Name, e.FullPath);
+            ReadTestResult(e.Name, e.FullPath);
 
             Console.WriteLine("File Changed: {0}", e.Name);
         }
         private static void ChecksForChangesInReopAndpull()
 
-        {            
-
+        {
+            while (true)
+            {
                 using (var repo = new LibGit2Sharp.Repository(@"C:\Users\User\source\repos\DemoApp"))
                 {
-
-                          string gitUser = "Moshe Yaso";
-                          string gitToken = " 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";
-                          var trackingBranch = repo.Branches["remotes/origin/my-remote-branch"];
-
-                  
+                    var trackingBranch = repo.Branches["remotes/origin/my-remote-branch"];
+                   
                     PullOptions pullOptions = new PullOptions()
                     {
                         MergeOptions = new MergeOptions()
@@ -105,16 +101,16 @@ namespace WatcherProject1
 
                     if (mergeResult.Commit == null)
                     {
+                        LastCommit();
+                        SecndCommit();
                        Console.WriteLine("pull changes successfully");
                         MsBuild();
                         RunTests();
 
+                        var tag = createTag();
 
-
-
-                        createTag($"V--0-{counter + 1}");
-                        pushTags($"V-0--{counter + 1}");
-                    counter++;
+                        pushTags(tag);
+                        continue;
                     }
                     else
                     {
@@ -122,32 +118,34 @@ namespace WatcherProject1
                     }
                 }
 
+            Thread.Sleep(10000); 
+            }
+
             
         }
 
-        public static bool createTag(string tag)
+        public static string createTag()
         {
+
             var repo = new LibGit2Sharp.Repository(@"C:\Users\User\source\repos\DemoApp");
             if (repo == null)
             {
                 Console.WriteLine(DateTime.Now + "No repository exists in " + @"C:\Users\User\source\repos\DemoApp");
-                return false;
             }
-            Tag t = repo.ApplyTag(tag);
+            Tag t = repo.ApplyTag($"v__{Guid.NewGuid()}");
             if (t == null)
             {
-                Console.WriteLine(DateTime.Now + "Could not create tag :" + tag);
-                return false;
+                Console.WriteLine(DateTime.Now + "Could not create tag :" + t.FriendlyName);
             }
             else
-                Console.WriteLine(DateTime.Now + "Tag has been created successfully :" + tag);
-            return true;
+                Console.WriteLine(DateTime.Now + "Tag has been created successfully :" + t.FriendlyName);
+            return t.CanonicalName;
         }
 
         public static bool pushTags(string tag)
         {
             string gitUser = "mosmo46";
-            string gitToken = "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";
+            string gitToken = "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";
             try
             {
                 LibGit2Sharp.Credentials creds = new UsernamePasswordCredentials()
@@ -161,8 +159,15 @@ namespace WatcherProject1
                 using (LibGit2Sharp.Repository repo = new LibGit2Sharp.Repository(@"C:\Users\User\source\repos\DemoApp"))
                 {
                     Remote remote = repo.Network.Remotes["origin"];
-                    repo.Network.Push(remote, rfspec, rfspec, options);
+                  // repo.Network.Push(repo.Network.Remotes["origin"], rfspec, options);
 
+                    //repo.Network.Push(remote, rfspec, rfspec, options);
+                    //  Thread.Sleep(5000);
+
+                    foreach (var t in repo.Tags)
+                    {
+                        repo.Network.Push(remote, t.CanonicalName, options);
+                    }
                 }
             }
             catch (Exception ex)
@@ -173,7 +178,6 @@ namespace WatcherProject1
 
             return true;
         }
-
 
         private static void MsBuild()
         {
@@ -204,6 +208,7 @@ namespace WatcherProject1
             var processBuild = Process.Start(MSBuild, solutionFile);
             processBuild.WaitForExit();
             }
+
         private static void RunTests()
         {
             string[] nunitConsoles = ConfigurationManager.AppSettings["nunitConsole"].Split(',');
@@ -235,13 +240,7 @@ namespace WatcherProject1
 
         }
 
-
-
-
-
-
-
-        private static void ReadXmlFile(string path, string readFilePath)
+        private static void ReadTestResult(string path, string readFilePath)
         {
             Serializer ser = new Serializer();
             string xmlInputData = string.Empty;
@@ -260,23 +259,23 @@ namespace WatcherProject1
 
                     if (resFromXml.failed == 0)
                     {
-                        string testResultTest = @"C:\Users\User\source\repos\DemoApp\Calc\testResult.txt";
+                        string testResultPath = @"C:\Users\User\source\repos\DemoApp\Calc\testResult.txt";
 
-                        if (!File.Exists(testResultTest))
+                        if (!File.Exists(testResultPath))
                         {
-                            File.Create(testResultTest).Dispose();
+                            File.Create(testResultPath).Dispose();
 
-                            using (TextWriter tw = new StreamWriter(testResultTest))
+                            using (TextWriter tw = new StreamWriter(testResultPath))
                             {
-                                tw.WriteLine($"Total tests {resFromXml.total}  {resFromXml.result}, Total failed {resFromXml.failed}");
+                                tw.WriteLine($"Total tests {resFromXml.total}  {resFromXml.result}, Total failed {resFromXml.failed} - {DateTime.Now.ToLocalTime()}");
                             }
 
                         }
-                        else if (File.Exists(testResultTest))
+                        else if (File.Exists(testResultPath))
                         {
-                            using (TextWriter tw = new StreamWriter(testResultTest))
+                            using (TextWriter tw = new StreamWriter(testResultPath))
                             {
-                                tw.WriteLine($"Total tests {resFromXml.total}  {resFromXml.result}, Total failed {resFromXml.failed}");
+                                tw.WriteLine($"Total tests {resFromXml.total}  {resFromXml.result}, Total failed {resFromXml.failed} - {DateTime.Now.ToLocalTime()}");
                             }
                         }
                         // UplodaToGithub(path, readFilePath);
@@ -290,6 +289,39 @@ namespace WatcherProject1
             }
 
 
+        }
+
+        public static string LastCommit()
+        {
+            string lastCommit = null;
+            using (var repo = new LibGit2Sharp.Repository(@"C:\Users\User\source\repos\DemoApp"))
+            {
+                lastCommit = repo.Commits.First().ToString();
+            }
+            return lastCommit;
+        }
+        
+        public static string SecndCommit()
+        {
+            string lastCommit = null;
+            using (var repo = new LibGit2Sharp.Repository(@"C:\Users\User\source\repos\DemoApp"))
+            {
+                lastCommit = repo.Commits.Take(2).ToList()[1].Sha;
+            }
+            return lastCommit;
+        }
+
+        public static List<string> AllTags()
+        {
+            List<string> tags = new List<string>();
+            using (var repo = new LibGit2Sharp.Repository(@"C:\Users\User\source\repos\DemoApp"))
+            {
+                foreach (var item in repo.Tags)
+                {
+                    tags.Add(item.FriendlyName.ToString());
+                }
+            }
+            return tags;
         }
         //private static async void UplodaToGithub(string path, string readFilePath)
         //{
