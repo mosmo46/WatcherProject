@@ -40,21 +40,19 @@ namespace UnitTestProject1
 
         public void CheckIfSecondCommitAdd()
         {
-            var ShaCommits = driver.FindElements(By.XPath("//a[@aria-label='View commit details']"));
-            var twoShortcutSha = ShaCommits.Take(2).ToList();
-            string ShortcutShaSecond = twoShortcutSha.Last().Text;
+            var ShortcutShaSecond = driver.FindElement(By.CssSelector("ol li:nth-of-type(2) div .BtnGroup a")).Text;
             driver.Navigate().GoToUrl($"https://github.com/mosmo46/DemoApp/commit/{ShortcutShaSecond}");
             System.Threading.Thread.Sleep(3000);
             string SeleniumShaSecond = driver.FindElement(By.XPath($"//span[contains(text(),'{ShortcutShaSecond}')]")).Text;
             string secndCommitShe = Program.SecndCommit();
             Assert.AreEqual(SeleniumShaSecond, secndCommitShe);
+
         }
 
         [Test]
         public void CheckIfTagMade()
         {
-            new WebDriverManager.DriverManager().SetUpDriver(new ChromeConfig());
-            driver = new ChromeDriver();
+          
             driver.Navigate().GoToUrl("https://github.com/mosmo46/DemoApp/tags");
 
             var tag = driver.FindElement(By.XPath("//*[@id='repo-content-pjax-container']/div/div[2]/div[2]/div[1]/div/div/div[1]/h4/a")).Text;
@@ -67,7 +65,7 @@ namespace UnitTestProject1
         [TearDown]
         public void TearDown()
         {
-            driver.Quit();
+            driver.Close();
         }
     }
 }

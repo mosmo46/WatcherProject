@@ -99,7 +99,7 @@ namespace WatcherProject1
                     );
 
 
-                    if (mergeResult.Commit == null)
+                    if (mergeResult.Commit != null)
                     {
                         LastCommit();
                         SecndCommit();
@@ -110,7 +110,6 @@ namespace WatcherProject1
                         var tag = createTag();
 
                         pushTags(tag);
-                        continue;
                     }
                     else
                     {
