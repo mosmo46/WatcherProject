@@ -97,18 +97,13 @@ namespace WatcherProject1
                         new LibGit2Sharp.Signature("my name", "my email", DateTimeOffset.Now),
                         pullOptions
                     );
-
-
                     if (mergeResult.Commit != null)
                     {
-                        LastCommit();
-                        SecndCommit();
+ 
                        Console.WriteLine("pull changes successfully");
                         MsBuild();
                         RunTests();
-
                         var tag = createTag();
-
                         pushTags(tag);
                     }
                     else
@@ -141,41 +136,25 @@ namespace WatcherProject1
             return t.CanonicalName;
         }
 
-        public static bool pushTags(string tag)
+
+
+        public static void pushTags(string tag)
         {
-            string gitUser = "mosmo46";
-            string gitToken = "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";
-            try
+            using (LibGit2Sharp.Repository repo = new LibGit2Sharp.Repository(@"C:\Users\User\source\repos\DemoApp"))
             {
-                LibGit2Sharp.Credentials creds = new UsernamePasswordCredentials()
-                {
-                    Username = gitUser,
-                    Password = gitToken
-                };
-                CredentialsHandler ccd = (url, usernameFromUrl, types) => creds;
-                PushOptions options = new PushOptions { CredentialsProvider = ccd };
-                string rfspec = "refs/tags/" + tag;
-                using (LibGit2Sharp.Repository repo = new LibGit2Sharp.Repository(@"C:\Users\User\source\repos\DemoApp"))
-                {
-                    Remote remote = repo.Network.Remotes["origin"];
-                  // repo.Network.Push(repo.Network.Remotes["origin"], rfspec, options);
 
-                    //repo.Network.Push(remote, rfspec, rfspec, options);
-                    //  Thread.Sleep(5000);
 
-                    foreach (var t in repo.Tags)
-                    {
-                        repo.Network.Push(remote, t.CanonicalName, options);
-                    }
-                }
+                PushOptions options = new PushOptions();
+                options.CredentialsProvider = new CredentialsHandler(
+                    (url, usernameFromUrl, types) =>
+                        new UsernamePasswordCredentials()
+                        {
+                            Username = "mosmo46",
+                            Password = "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"
+
+                        });
+                repo.Network.Push(repo.Network.Remotes["origin"], tag, options);
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine(DateTime.Now + "----#Errors in Push tag " + tag + " " + ex.Message);
-                return false;
-            }
-
-            return true;
         }
 
         private static void MsBuild()

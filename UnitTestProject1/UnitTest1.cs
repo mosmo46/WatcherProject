@@ -52,14 +52,10 @@ namespace UnitTestProject1
         [Test]
         public void CheckIfTagMade()
         {
-          
             driver.Navigate().GoToUrl("https://github.com/mosmo46/DemoApp/tags");
-
             var tag = driver.FindElement(By.XPath("//*[@id='repo-content-pjax-container']/div/div[2]/div[2]/div[1]/div/div/div[1]/h4/a")).Text;
             var tags = Program.AllTags();
-
             Assert.IsTrue(tags.Contains(tag));
-
         }
 
         [TearDown]
